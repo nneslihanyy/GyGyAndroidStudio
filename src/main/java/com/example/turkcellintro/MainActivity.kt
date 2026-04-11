@@ -26,7 +26,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
+// Burada ekran tanımlarını yap.
+sealed class Screen(val route: String) {
+    data object Register : Screen("register")
+    data object Homepage : Screen("homepage")
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,21 +42,35 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Scaffold { paddingValues ->
-                MyAppStart(Modifier.padding(paddingValues))
+                MyNavigatableApp(Modifier.padding(paddingValues))
             }
         }
     }
 }
 
 @Composable
-fun MyAppStart(modifier: Modifier) {
+fun MyNavigatableApp(modifier: Modifier) {
+    val navController = rememberNavController()
+    // Magic String
+    Column() {
+        NavHost(navController = navController, startDestination = Screen.Register.route) {
+            composable(Screen.Register.route) { RegisterScreen(modifier, navController) }
+            composable(Screen.Homepage.route) { Homepage(modifier) }
+        }
+    }
+
+}
+
+@Composable
+fun Homepage(modifier: Modifier) {
     // State'i tanımla ki..
     // ikisi de burayı okuyabilsin-değiştirebilsin..
     var toDoList = remember { mutableStateListOf("Veri 1", "Veri 2", "Veri 3") }
 
 
     Column(modifier = modifier.fillMaxSize()) {
-        AddTodo(onAdd = { todo -> toDoList.add(todo) }) // child 1
+        Text("Kayıt Ol Sayfasına Git")
+        AddToDo(onAdd = { text -> toDoList.add(text) }) // child 1
         ToDoList(toDoList, onDelete = { i -> toDoList.removeAt(i) }) // child 2
     }
 }
@@ -56,7 +78,7 @@ fun MyAppStart(modifier: Modifier) {
 
 // State aynı
 @Composable
-fun AddTodo(onAdd: (String) -> Unit) {
+fun AddToDo(onAdd: (String) -> Unit) {
     var text = remember { mutableStateOf("abc") }
 
     Column() {
@@ -98,5 +120,3 @@ fun ToDoList(toDoList: List<String>, onDelete: (Int) -> Unit) {
         }
     }
 }
-
-
