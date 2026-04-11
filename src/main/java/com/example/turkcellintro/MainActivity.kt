@@ -48,7 +48,7 @@ fun MyAppStart(modifier: Modifier) {
 
 
     Column(modifier = modifier.fillMaxSize()) {
-        SingleInputExample() // child 1
+        AddTodo(onAdd = { todo -> toDoList.add(todo) }) // child 1
         ToDoList(toDoList, onDelete = { i -> toDoList.removeAt(i) }) // child 2
     }
 }
@@ -56,7 +56,7 @@ fun MyAppStart(modifier: Modifier) {
 
 // State aynı
 @Composable
-fun SingleInputExample() {
+fun AddTodo(onAdd: (String) -> Unit) {
     var text = remember { mutableStateOf("abc") }
 
     Column() {
@@ -67,6 +67,8 @@ fun SingleInputExample() {
         )
         Button(
             onClick = {
+                onAdd(text.value)
+                text.value = ""
             }
         ) {
             Text("Tıkla")
@@ -96,3 +98,5 @@ fun ToDoList(toDoList: List<String>, onDelete: (Int) -> Unit) {
         }
     }
 }
+
+
