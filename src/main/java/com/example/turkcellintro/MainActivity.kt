@@ -40,9 +40,13 @@ sealed class Screen(val route: String) {
     data object Homepage : Screen("homepage")
 }
 
+
 // Telefon çevirildiği an => Yeniden başlatılır.
+
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -125,7 +129,7 @@ fun ToDoList(toDoList: List<Todo>, onDelete: (Int) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(todo.title)
-                Text(todo.completed.toString())
+                
                 Text(todo.id.toString())
                 IconButton(onClick = {
                     onDelete(index)
