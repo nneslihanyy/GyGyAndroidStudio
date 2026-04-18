@@ -21,14 +21,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.turkcellintro.model.Todo
+import com.example.turkcellintro.viewmodel.ToDoListViewModel
 
 // Burada ekran tanımlarını yap.
 sealed class Screen(val route: String) {
@@ -36,6 +40,7 @@ sealed class Screen(val route: String) {
     data object Homepage : Screen("homepage")
 }
 
+// Telefon çevirildiği an => Yeniden başlatılır.
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,30 +58,39 @@ fun MyNavigatableApp(modifier: Modifier) {
     val navController = rememberNavController()
     // Magic String
     Column() {
-        NavHost(navController = navController, startDestination = Screen.Register.route) {
+        NavHost(navController = navController, startDestination = Screen.Homepage.route) {
             composable(Screen.Register.route) { RegisterScreen(modifier, navController) }
             composable(Screen.Homepage.route) { Homepage(modifier) }
         }
     }
-
 }
 
 @Composable
 fun Homepage(modifier: Modifier) {
-    // State'i tanımla ki..
-    // ikisi de burayı okuyabilsin-değiştirebilsin..
-    var toDoList = remember { mutableStateListOf("Veri 1", "Veri 2", "Veri 3") }
+    val todoViewModel: ToDoListViewModel = viewModel()
 
+    val todos by todoViewModel.todos.collectAsState()
+    val isLoading by todoViewModel.isLoading.collectAsState()
+    val error by todoViewModel.error.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
-        Text("Kayıt Ol Sayfasına Git")
-        AddToDo(onAdd = { text -> toDoList.add(text) }) // child 1
-        ToDoList(toDoList, onDelete = { i -> toDoList.removeAt(i) }) // child 2
+        when {
+            isLoading -> {
+                Text("Yükleniyor")
+            }
+
+            error != null -> {
+                Text("Hata aldı: $error")
+            }
+
+            else -> {
+                ToDoList(todos) { }
+            }
+        }
     }
 }
-// State Hoisting -> State'i child(lar)dan alıp parent'a taşımak.
 
-// State aynı
+
 @Composable
 fun AddToDo(onAdd: (String) -> Unit) {
     var text = remember { mutableStateOf("abc") }
@@ -100,7 +114,7 @@ fun AddToDo(onAdd: (String) -> Unit) {
 
 // State aynı
 @Composable
-fun ToDoList(toDoList: List<String>, onDelete: (Int) -> Unit) {
+fun ToDoList(toDoList: List<Todo>, onDelete: (Int) -> Unit) {
 
     LazyColumn(modifier = Modifier.fillMaxSize())
     {
@@ -110,7 +124,9 @@ fun ToDoList(toDoList: List<String>, onDelete: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(todo)
+                Text(todo.title)
+                Text(todo.completed.toString())
+                Text(todo.id.toString())
                 IconButton(onClick = {
                     onDelete(index)
                 }) {
