@@ -40,4 +40,28 @@ class ToDoListViewModel : ViewModel() {
             }
         }
     }
+
+    fun delete(id: Int) {
+        viewModelScope.launch {
+            try {
+                repository.deleteTodo(id)
+                fetchTodos()
+            } catch (e: Exception) {
+                println(e.message)
+            }
+        }
+    }
+
+    fun add(title: String, description: String? = null) {
+        viewModelScope.launch {
+            try {
+                val id = (_todos.value.maxOfOrNull { it.id } ?: 0) + 1
+                val newTodo = Todo(id = id, title = title, description = description)
+                repository.addTodo(newTodo)
+                fetchTodos()
+            } catch (e: Exception) {
+                println(e.message)
+            }
+        }
+    }
 }

@@ -9,4 +9,14 @@ class TodoRepository {
     suspend fun getTodos(): List<Todo> {
         return db.from("todos").select().decodeList()
     }
+
+    suspend fun addTodo(todo: Todo) {
+        db.from("todos").insert(todo)
+    }
+
+    suspend fun deleteTodo(id: Int) {
+        db.from("todos").delete {
+            filter { eq("id", id) }
+        }
+    }
 }

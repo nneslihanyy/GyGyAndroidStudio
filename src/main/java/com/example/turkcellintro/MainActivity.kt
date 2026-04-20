@@ -27,7 +27,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -38,15 +40,14 @@ import com.example.turkcellintro.viewmodel.ToDoListViewModel
 sealed class Screen(val route: String) {
     data object Register : Screen("register")
     data object Homepage : Screen("homepage")
+    data object AddTodo : Screen("add_todo")
 }
 
-
 // Telefon çevirildiği an => Yeniden başlatılır.
-
 class MainActivity : ComponentActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
 
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -60,37 +61,67 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyNavigatableApp(modifier: Modifier) {
     val navController = rememberNavController()
+    val todoViewModel: ToDoListViewModel = viewModel()
     // Magic String
     Column() {
         NavHost(navController = navController, startDestination = Screen.Homepage.route) {
             composable(Screen.Register.route) { RegisterScreen(modifier, navController) }
-            composable(Screen.Homepage.route) { Homepage(modifier) }
+            composable(Screen.Homepage.route) { Homepage(modifier, navController, todoViewModel) }
+            composable(Screen.AddTodo.route) {
+                AddTodoScreen { title ->
+                    todoViewModel.add(title)
+                    navController.popBackStack()
+                }
+            }
         }
     }
 }
 
 @Composable
-fun Homepage(modifier: Modifier) {
-    val todoViewModel: ToDoListViewModel = viewModel()
+fun Homepage(modifier: Modifier, navController: NavController, todoViewModel: ToDoListViewModel) {
 
     val todos by todoViewModel.todos.collectAsState()
     val isLoading by todoViewModel.isLoading.collectAsState()
     val error by todoViewModel.error.collectAsState()
 
+    // TODO: 1. Silme işlemi sonrası veriyi yenile.
+    // TODO: 2. Ekleme işlemi sayfası yap, ekleme sonrası yine veri yenilensin.
     Column(modifier = modifier.fillMaxSize()) {
-        when {
-            isLoading -> {
-                Text("Yükleniyor")
-            }
+        androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            when {
+                isLoading -> {
+                    Text("Yükleniyor...", modifier = Modifier.align(Alignment.Center))
+                }
 
-            error != null -> {
-                Text("Hata aldı: $error")
-            }
+                error != null -> {
+                    Text("Hata aldı: $error", modifier = Modifier.align(Alignment.Center))
+                }
 
-            else -> {
-                ToDoList(todos) { }
+                todos.isEmpty() -> {
+                    Text("Liste boş, lütfen yeni bir görev ekleyin.", modifier = Modifier.align(Alignment.Center))
+                }
+
+                else -> {
+                    ToDoList(todos, onDelete = { id -> todoViewModel.delete(id) })
+                }
             }
         }
+        Button(
+            onClick = { navController.navigate(Screen.AddTodo.route) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text("Yeni Ekle")
+        }
+    }
+}
+
+@Composable
+fun AddTodoScreen(onAdd: (String) -> Unit) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+        Text("Yeni Todo Ekle")
+        AddToDo(onAdd = onAdd)
     }
 }
 
@@ -128,11 +159,10 @@ fun ToDoList(toDoList: List<Todo>, onDelete: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(todo.title)
-                
                 Text(todo.id.toString())
+                Text(todo.title)
                 IconButton(onClick = {
-                    onDelete(index)
+                    onDelete(todo.id)
                 }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Sil")
                 }
